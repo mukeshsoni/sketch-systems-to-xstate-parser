@@ -179,8 +179,7 @@ function parse(tokens) {
       return oneOrAnother(transition, stateParser);
     });
     zeroOrOne(() => {
-      oneOrMore(newline());
-      return dedent();
+      return oneOrMore(newline());
     });
     zeroOrMore(newline);
 
@@ -207,6 +206,7 @@ function parse(tokens) {
   function stateParser() {
     try {
       const stateInfo = oneOrAnother(stateWithMoreDetails, stateWithNameOnly);
+      zeroOrMore(dedent);
       // const stateInfo = stateWithMoreDetails();
       return stateInfo;
     } catch (e) {

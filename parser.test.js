@@ -7,8 +7,31 @@ const inputStr = `abc
   ast&
     opq -> rst
     uvw -> xyz
-  try -> this
-lastState`;
+  tried -> that
+  lastState`;
+
+const expectedXstateJSON = {
+  abc: {
+    type: "sequential",
+    on: {
+      def: "lmn",
+      pasta: "noodles",
+      tried: "that"
+    },
+    states: {
+      ast: {
+        type: "parallel",
+        on: {
+          opq: "rst",
+          uvw: "xyz"
+        }
+      },
+      lastState: {
+        type: "sequential"
+      }
+    }
+  }
+};
 
 const invalidInputStr = `abc
   def -> lmn
@@ -58,15 +81,15 @@ describe("tokenizer", () => {
   });
 });
 
-test("abc", () => {
-  // console.log("input string:\n", inputStr);
-
+describe.only("parser", () => {
   const tokens = tokenize(inputStr);
 
   // console.log(tokens.filter(token => token.type !== 'WS'))
 
   const ast = parse(tokens);
 
+  console.log(JSON.stringify(ast, null, 2));
+  expect(ast).toEqual(expectedXstateJSON);
   // console.log("AST:\n", JSON.stringify(ast, null, 2));
   expect(true).toBe(true);
 });

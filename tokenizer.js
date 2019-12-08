@@ -60,7 +60,8 @@ function tokenize(str) {
           {
             type: "INDENT",
             line: currentLine,
-            col: 1
+            col: 1,
+            text: match[0]
           }
         ];
       } else if (currentIndentLevel < prevIndentLevel) {
@@ -89,6 +90,7 @@ function tokenize(str) {
           dedentTokens.push({
             type: "DEDENT",
             line: currentLine,
+            text: match ? match[0] : "",
             col: 1
           });
 
