@@ -1,9 +1,11 @@
+import { tokenize } from './tokenizer';
+
 // omit certain properties from an Object
 // the keys arguments contains array of strings which are
 // the array of property names to be omitted
 function omit(keys, obj) {
   return Object.entries(obj)
-    .filter(([k, v]) => !keys.includes(k))
+    .filter(([k, _]) => !keys.includes(k))
     .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {});
 }
 
@@ -13,7 +15,8 @@ function arrayOfObjToObj(arr) {
 }
 
 // the main function. Just call this with the tokens
-function parse(tokens) {
+export function parse(inputStr) {
+  const tokens = tokenize(inputStr);
   let index = 0;
 
   const consume = () => tokens[index++];
@@ -24,7 +27,8 @@ function parse(tokens) {
   function oneOrAnother(...args) {
     const savedIndex = index;
 
-    for (parser of args) {
+    for (let i = 0; i < args.length; i++) {
+      const parser = args[i];
       try {
         const parserResult = parser();
         return parserResult;
@@ -38,7 +42,7 @@ function parse(tokens) {
     throw new Error(
       `oneOrAnother parser: matched none of the rules: ${args
         .map(fn => fn.name)
-        .join(" | ")}`
+        .join(' | ')}`,
     );
   }
 
@@ -86,27 +90,27 @@ function parse(tokens) {
   }
 
   function newline() {
-    if (consume().type === "NEWLINE") {
+    if (consume().type === 'NEWLINE') {
       return true;
     }
 
-    throw new Error("Expected a NEWLINE");
+    throw new Error('Expected a NEWLINE');
   }
 
   function identifier() {
-    if (tokens[index].type === "IDENTIFIER") {
+    if (tokens[index].type === 'IDENTIFIER') {
       return consume().text;
     }
 
-    throw new Error("Could not find IDENTIFIER. Instead found", tokens[index]);
+    throw new Error('Could not find IDENTIFIER. Instead found', tokens[index]);
   }
 
   function parallelState() {
-    if (consume().type === "PARALLEL_STATE") {
+    if (consume().type === 'PARALLEL_STATE') {
       return true;
     }
 
-    throw new Error("Expected PARALLEL_STATE");
+    throw new Error('Expected PARALLEL_STATE');
   }
 
   function stateWithNameOnly() {
@@ -115,41 +119,41 @@ function parse(tokens) {
 
     return {
       [stateName]: {
-        type: parallel.length > 0 ? "parallel" : "sequential"
-      }
+        type: parallel.length > 0 ? 'parallel' : 'sequential',
+      },
     };
   }
 
   function indent() {
-    if (consume().type === "INDENT") {
+    if (consume().type === 'INDENT') {
       return true;
     }
 
-    throw new Error("Expected indent");
+    throw new Error('Expected indent');
   }
 
   function dedent() {
-    if (consume().type === "DEDENT") {
+    if (consume().type === 'DEDENT') {
       return true;
     }
 
-    throw new Error("Expected dedent");
+    throw new Error('Expected dedent');
   }
 
   function whitespace() {
-    if (consume().type === "WS") {
+    if (consume().type === 'WS') {
       return true;
     }
 
-    throw new Error("expected whitespace");
+    throw new Error('expected whitespace');
   }
 
   function arrow() {
-    if (consume().type === "TRANSITION_ARROW") {
+    if (consume().type === 'TRANSITION_ARROW') {
       return true;
     }
 
-    throw new Error("expected whitespace");
+    throw new Error('expected whitespace');
   }
 
   function transition() {
@@ -161,8 +165,8 @@ function parse(tokens) {
     zeroOrMore(newline);
 
     return {
-      type: "transition",
-      [eventName]: stateName
+      type: 'transition',
+      [eventName]: stateName,
     };
   }
   // like transitions, nested states etc.
@@ -184,22 +188,22 @@ function parse(tokens) {
     zeroOrMore(newline);
 
     const transitions = transitionsAndStates.filter(
-      ts => ts.type === "transition"
+      ts => ts.type === 'transition',
     );
     const nestedStates = transitionsAndStates.filter(
-      ts => ts.type !== "transition"
+      ts => ts.type !== 'transition',
     );
 
     return {
       [stateName]: {
-        type: parallel.length > 0 ? "parallel" : "sequential",
+        type: parallel.length > 0 ? 'parallel' : 'sequential',
         on:
           transitions.length > 0
-            ? omit(["type"], arrayOfObjToObj(transitions))
+            ? omit(['type'], arrayOfObjToObj(transitions))
             : undefined,
         states:
-          nestedStates.length > 0 ? arrayOfObjToObj(nestedStates) : undefined
-      }
+          nestedStates.length > 0 ? arrayOfObjToObj(nestedStates) : undefined,
+      },
     };
   }
 
@@ -213,8 +217,8 @@ function parse(tokens) {
       console.error(
         `Failed to parse: for token ${index}: \n`,
         tokens[index],
-        "\nError: ",
-        e.message
+        '\nError: ',
+        e.message,
       );
       throw new Error(e);
     }
@@ -230,8 +234,4 @@ function parse(tokens) {
 
   return stateMachine();
 }
-
-module.exports = {
-  parse
-};
 

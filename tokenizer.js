@@ -6,7 +6,7 @@ function prevTokenTypeCheck(tokens, type) {
   return tokens.length > 0 && tokens[tokens.length - 1].type === type;
 }
 
-function tokenize(str) {
+export function tokenize(str) {
   let index = 0;
   let tokens = [];
   let indentStack = [0];
@@ -172,6 +172,4 @@ function tokenize(str) {
   }
   return tokens;
 }
-
-module.exports = { tokenize };
 
