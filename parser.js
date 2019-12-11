@@ -113,15 +113,12 @@ export function parse(inputStr) {
     throw new Error('Expected PARALLEL_STATE');
   }
 
-  function stateWithNameOnly() {
-    const stateName = identifier();
-    const parallel = zeroOrOne(parallelState);
+  function finalState() {
+    if (consume().type === 'FINAL_STATE') {
+      return true;
+    }
 
-    return {
-      [stateName]: {
-        type: parallel.length > 0 ? 'parallel' : 'sequential',
-      },
-    };
+    throw new Error('Expected PARALLEL_STATE');
   }
 
   function indent() {
@@ -169,6 +166,24 @@ export function parse(inputStr) {
       [eventName]: stateName,
     };
   }
+
+  function stateWithNameOnly() {
+    const stateName = identifier();
+    const parallel = zeroOrOne(parallelState);
+    const isFinal = zeroOrOne(finalState);
+    zeroOrMore(newline);
+
+    return {
+      [stateName]: {
+        type:
+          parallel.length > 0
+            ? 'parallel'
+            : isFinal.length > 0
+            ? 'final'
+            : undefined,
+      },
+    };
+  }
   // like transitions, nested states etc.
   // e.g.
   // active
@@ -177,6 +192,7 @@ export function parse(inputStr) {
   function stateWithMoreDetails() {
     const stateName = identifier();
     const parallel = zeroOrOne(parallelState);
+    const isFinal = zeroOrOne(finalState);
     oneOrMore(newline);
     indent();
     const transitionsAndStates = zeroOrMore(() => {
@@ -196,7 +212,12 @@ export function parse(inputStr) {
 
     return {
       [stateName]: {
-        type: parallel.length > 0 ? 'parallel' : 'sequential',
+        type:
+          parallel.length > 0
+            ? 'parallel'
+            : isFinal.length > 0
+            ? 'final'
+            : undefined,
         on:
           transitions.length > 0
             ? omit(['type'], arrayOfObjToObj(transitions))
@@ -226,7 +247,16 @@ export function parse(inputStr) {
 
   function stateMachine() {
     try {
-      return stateParser();
+      const parserOutput = stateParser();
+
+      const id = Object.keys(parserOutput)[0];
+      const initial = Object.keys(parserOutput[id].states)[0];
+
+      return {
+        id,
+        initial,
+        ...parserOutput[id],
+      };
     } catch (e) {
       return { error: e };
     }

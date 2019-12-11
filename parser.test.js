@@ -38,6 +38,41 @@ const invalidInputStr = `abc
       pqr
     stm`;
 
+const fetchInputStr = `fetch
+  idle
+      FETCH -> loading
+  loading
+      RESOLVE -> success
+      REJECT -> failure
+  success$
+  failure
+      RETRY -> loading`;
+
+const expectedXstateJSONFetch = {
+  id: 'fetch',
+  initial: 'idle',
+  states: {
+    idle: {
+      on: {
+        FETCH: 'loading',
+      },
+    },
+    loading: {
+      on: {
+        RESOLVE: 'success',
+        REJECT: 'failure',
+      },
+    },
+    success: {
+      type: 'final',
+    },
+    failure: {
+      on: {
+        RETRY: 'loading',
+      },
+    },
+  },
+};
 describe('tokenizer', () => {
   it('should give the correct number of tokens', () => {
     const tokens = tokenize(inputStr);
@@ -81,12 +116,18 @@ describe('tokenizer', () => {
   });
 });
 
-describe.only('parser', () => {
-  const ast = parse(inputStr);
+describe('parser', () => {
+  it('should generate xstate representation of the input string', () => {
+    const ast = parse(inputStr);
 
-  console.log(JSON.stringify(ast, null, 2));
-  expect(ast).toEqual(expectedXstateJSON);
+    console.log(JSON.stringify(ast, null, 2));
+    expect(ast).toEqual(expectedXstateJSON);
+  });
 
-  // console.log("AST:\n", JSON.stringify(ast, null, 2));
-  expect(true).toBe(true);
+  it.only('should generate xstate representation for the fetch statechart', () => {
+    const ast = parse(fetchInputStr);
+
+    console.log(JSON.stringify(ast, null, 2));
+    expect(ast).toEqual(expectedXstateJSONFetch);
+  });
 });

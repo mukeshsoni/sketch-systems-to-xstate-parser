@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "jest",
-    "build": "rollup --config"
+    "build": "rollup --config",
+    "test": "jest"
   },
   "repository": {
     "type": "git",
