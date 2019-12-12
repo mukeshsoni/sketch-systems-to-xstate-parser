@@ -165,6 +165,9 @@ export function tokenize(str) {
     } else if (char === '$') {
       addToken('FINAL_STATE');
       index += 1;
+    } else if (char === '*') {
+      addToken('INITIAL_STATE');
+      index += 1;
     } else if (/[a-zA-Z0-9_]/.test(char)) {
       const id = identifierToken();
       addToken('IDENTIFIER', id);

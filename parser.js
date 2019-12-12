@@ -14,6 +14,36 @@ function arrayOfObjToObj(arr) {
   return arr.reduce((acc, item) => ({ ...acc, ...item }), {});
 }
 
+function withInitialState(stateInfo) {
+  const stateName = Object.keys(stateInfo)[0];
+  const nestedStates = stateInfo[stateName].states;
+  const nestedStateNames = Object.keys(nestedStates || {});
+
+  if (nestedStateNames && nestedStateNames.length > 0) {
+    const initialStateName = Object.entries(nestedStates).reduce(
+      (acc, [k, v]) => {
+        if (v.isInitial) {
+          return k;
+        } else {
+          return acc;
+        }
+      },
+      nestedStateNames[0],
+    );
+
+    console.log('initial state name', stateName, initialStateName);
+    return {
+      ...stateInfo,
+      [stateName]: {
+        ...stateInfo[stateName],
+        initial: initialStateName,
+      },
+    };
+  } else {
+    return stateInfo;
+  }
+}
+
 // the main function. Just call this with the tokens
 export function parse(inputStr) {
   // filter the comment tokens. Not useful for the parsing
@@ -122,6 +152,14 @@ export function parse(inputStr) {
     throw new Error('Expected PARALLEL_STATE');
   }
 
+  function initialState() {
+    if (consume().type === 'INITIAL_STATE') {
+      return true;
+    }
+
+    throw new Error('Expected PARALLEL_STATE');
+  }
+
   function indent() {
     if (consume().type === 'INDENT') {
       return true;
@@ -172,6 +210,7 @@ export function parse(inputStr) {
     const stateName = identifier();
     const parallel = zeroOrOne(parallelState);
     const isFinal = zeroOrOne(finalState);
+    const isInitial = zeroOrOne(initialState);
     zeroOrMore(newline);
 
     return {
@@ -182,6 +221,7 @@ export function parse(inputStr) {
             : isFinal.length > 0
             ? 'final'
             : undefined,
+        isInitial: isInitial.length > 0 ? true : undefined,
       },
     };
   }
@@ -194,6 +234,7 @@ export function parse(inputStr) {
     const stateName = identifier();
     const parallel = zeroOrOne(parallelState);
     const isFinal = zeroOrOne(finalState);
+    const isInitial = zeroOrOne(initialState);
     oneOrMore(newline);
     indent();
     const transitionsAndStates = zeroOrMore(() => {
@@ -212,7 +253,6 @@ export function parse(inputStr) {
       ts => ts.type !== 'transition',
     );
 
-    console.log(transitionsAndStates, transitions, nestedStates);
     return {
       [stateName]: {
         type:
@@ -221,6 +261,7 @@ export function parse(inputStr) {
             : isFinal.length > 0
             ? 'final'
             : undefined,
+        isInitial: isInitial.length > 0 ? true : undefined,
         on:
           transitions.length > 0
             ? omit(['type'], arrayOfObjToObj(transitions))
@@ -234,9 +275,8 @@ export function parse(inputStr) {
   function stateParser() {
     try {
       const stateInfo = oneOrAnother(stateWithMoreDetails, stateWithNameOnly);
-      // console.log(JSON.stringify(stateInfo, null, 2));
-      // const stateInfo = stateWithMoreDetails();
-      return stateInfo;
+
+      return withInitialState(stateInfo);
     } catch (e) {
       console.error(
         `Failed to parse: for token ${index}: \n`,
