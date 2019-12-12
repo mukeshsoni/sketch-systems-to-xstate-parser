@@ -11,25 +11,22 @@ const inputStr = `abc
   lastState`;
 
 const expectedXstateJSON = {
-  abc: {
-    type: 'sequential',
-    on: {
-      def: 'lmn',
-      pasta: 'noodles',
-      tried: 'that',
-    },
-    states: {
-      ast: {
-        type: 'parallel',
-        on: {
-          opq: 'rst',
-          uvw: 'xyz',
-        },
-      },
-      lastState: {
-        type: 'sequential',
+  id: 'abc',
+  initial: 'ast',
+  on: {
+    def: 'lmn',
+    pasta: 'noodles',
+    tried: 'that',
+  },
+  states: {
+    ast: {
+      type: 'parallel',
+      on: {
+        opq: 'rst',
+        uvw: 'xyz',
       },
     },
+    lastState: {},
   },
 };
 
@@ -86,7 +83,6 @@ describe('tokenizer', () => {
     expect(tokens[2].type).toEqual('INDENT');
     expect(tokens[14].type).toEqual('INDENT');
     expect(tokens[23].type).toEqual('DEDENT');
-    expect(tokens[28].type).toEqual('DEDENT');
   });
 
   it('catches incorrect indentation errors', () => {
@@ -102,11 +98,14 @@ describe('tokenizer', () => {
     expect(secondIdentifier.line).toEqual(2);
     expect(secondIdentifier.col).toEqual(3);
 
-    const lastToken = tokens[29];
+    const lastToken = tokens[tokens.length - 1];
+    expect(lastToken.type).toEqual('DEDENT');
 
-    expect(lastToken.type).toEqual('IDENTIFIER');
-    expect(lastToken.line).toEqual(8);
-    expect(lastToken.col).toEqual(1);
+    const secondLastToken = tokens[tokens.length - 2];
+
+    expect(secondLastToken.type).toEqual('IDENTIFIER');
+    expect(secondLastToken.line).toEqual(8);
+    expect(secondLastToken.col).toEqual(3);
 
     const uvwToken = tokens.find(token => token.text === 'uvw');
 
@@ -124,7 +123,7 @@ describe('parser', () => {
     expect(ast).toEqual(expectedXstateJSON);
   });
 
-  it.only('should generate xstate representation for the fetch statechart', () => {
+  it('should generate xstate representation for the fetch statechart', () => {
     const ast = parse(fetchInputStr);
 
     console.log(JSON.stringify(ast, null, 2));
