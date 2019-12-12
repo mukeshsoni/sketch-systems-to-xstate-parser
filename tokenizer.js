@@ -12,7 +12,7 @@ export function tokenize(str) {
   let indentStack = [0];
   let currentLine = 1;
   let currentCol = 1;
-  const identifierRegex = /[a-zA-Z0-9_]/;
+  const identifierRegex = /[a-zA-Z0-9_\.]/;
 
   function identifierToken() {
     let char = next();

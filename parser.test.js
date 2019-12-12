@@ -7,7 +7,7 @@ const inputStr = `abc
   pasta -> noodles #more comment
   ast&*
     opq -> rst; ifyes
-    uvw -> xyz
+    uvw -> ast.opq
     nestedstate1
     nestedstate2*
   tried -> that
@@ -28,7 +28,7 @@ const expectedXstateJSON = {
       isInitial: true,
       on: {
         opq: { target: 'rst', cond: 'ifyes' },
-        uvw: 'xyz',
+        uvw: 'ast.opq',
       },
       states: {
         nestedstate1: {},
