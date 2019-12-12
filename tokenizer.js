@@ -26,6 +26,19 @@ export function tokenize(str) {
     return idStr;
   }
 
+  function commentToken() {
+    let char = next();
+    let comment = '';
+
+    while (char !== undefined && char !== '\n' && char !== '\r') {
+      comment += char;
+      index += 1;
+      char = next();
+    }
+
+    return comment;
+  }
+
   // this is the main function
   // It takes care of creating the right INDENT and DETENT tokens
   // the algorithm is taken from here - https://docs.python.org/3/reference/lexical_analysis.html
@@ -143,6 +156,9 @@ export function tokenize(str) {
       currentLine += 1;
       currentCol = 1;
       index += 1;
+    } else if (char === '#') {
+      const comment = commentToken();
+      addToken('COMMENT', comment);
     } else if (char === '&') {
       addToken('PARALLEL_STATE');
       index += 1;

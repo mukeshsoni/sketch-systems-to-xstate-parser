@@ -16,7 +16,8 @@ function arrayOfObjToObj(arr) {
 
 // the main function. Just call this with the tokens
 export function parse(inputStr) {
-  const tokens = tokenize(inputStr);
+  // filter the comment tokens. Not useful for the parsing
+  const tokens = tokenize(inputStr).filter(t => t.type !== 'COMMENT');
   let index = 0;
 
   const consume = () => tokens[index++];
