@@ -46,8 +46,13 @@ function withInitialState(stateInfo) {
 
 // the main function. Just call this with the tokens
 export function parse(inputStr) {
-  // filter the comment tokens. Not useful for the parsing
-  const tokens = tokenize(inputStr).filter(t => t.type !== 'COMMENT');
+  // 1. filter the comment tokens. Not useful for the parsing
+  // 2. We can also treat newlines as useless. They were only useful during
+  // the tokenizing phase because the INDENT and DEDENT tokens have be to be
+  // preceded by a NEWLINE. In the final grammar, newlines only complicate things
+  const tokens = tokenize(inputStr).filter(
+    t => t.type !== 'COMMENT' && t.type !== 'NEWLINE',
+  );
   let index = 0;
 
   const consume = () => tokens[index++];
@@ -198,7 +203,6 @@ export function parse(inputStr) {
     arrow();
     zeroOrMore(whitespace);
     const stateName = identifier();
-    zeroOrMore(newline);
 
     return {
       type: 'transition',
@@ -211,7 +215,6 @@ export function parse(inputStr) {
     const parallel = zeroOrOne(parallelState);
     const isFinal = zeroOrOne(finalState);
     const isInitial = zeroOrOne(initialState);
-    zeroOrMore(newline);
 
     return {
       [stateName]: {
@@ -235,15 +238,10 @@ export function parse(inputStr) {
     const parallel = zeroOrOne(parallelState);
     const isFinal = zeroOrOne(finalState);
     const isInitial = zeroOrOne(initialState);
-    oneOrMore(newline);
     indent();
     const transitionsAndStates = zeroOrMore(() => {
       return oneOrAnother(transition, stateParser);
     });
-    zeroOrOne(() => {
-      return oneOrMore(newline());
-    });
-    zeroOrMore(newline);
     zeroOrMore(dedent);
 
     const transitions = transitionsAndStates.filter(
