@@ -139,7 +139,7 @@ describe('parser', () => {
   it('should generate xstate representation of the input string', () => {
     const ast = parse(inputStr);
 
-    console.log(JSON.stringify(ast, null, 2));
+    // console.log(JSON.stringify(ast, null, 2));
     expect(ast).toEqual(expectedXstateJSON);
   });
 

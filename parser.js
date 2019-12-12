@@ -31,7 +31,6 @@ function withInitialState(stateInfo) {
       nestedStateNames[0],
     );
 
-    console.log('initial state name', stateName, initialStateName);
     return {
       ...stateInfo,
       [stateName]: {
@@ -276,12 +275,6 @@ export function parse(inputStr) {
 
       return withInitialState(stateInfo);
     } catch (e) {
-      console.error(
-        `Failed to parse: for token ${index}: \n`,
-        tokens[index],
-        '\nError: ',
-        e.message,
-      );
       throw new Error(e);
     }
   }

@@ -85,7 +85,6 @@ export function tokenize(str) {
         // any dedent/outdent must match some previous indentation level.
         // otherwise it's a syntax error
         if (dedentLevelInStack === undefined) {
-          console.error('invalid indentation', indentStack, currentIndentLevel);
           throw new Error('Invalid indentation');
         }
 
