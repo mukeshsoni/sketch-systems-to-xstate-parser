@@ -8,6 +8,8 @@ const inputStr = `abc
   ast&
     opq -> rst
     uvw -> xyz
+    nestedstate1
+    nestedstate2
   tried -> that
   lastState`;
 
@@ -25,6 +27,10 @@ const expectedXstateJSON = {
       on: {
         opq: 'rst',
         uvw: 'xyz',
+      },
+      states: {
+        nestedstate1: {},
+        nestedstate2: {},
       },
     },
     lastState: {},
@@ -75,7 +81,7 @@ describe('tokenizer', () => {
   it('should give the correct number of tokens', () => {
     const tokens = tokenize(inputStr);
 
-    expect(tokens).toHaveLength(33);
+    expect(tokens).toHaveLength(37);
   });
 
   it('gives correct indent and dedent tokens', () => {
@@ -84,7 +90,7 @@ describe('tokenizer', () => {
     expect(tokens[2].type).toEqual('COMMENT');
     expect(tokens[4].type).toEqual('INDENT');
     expect(tokens[17].type).toEqual('INDENT');
-    expect(tokens[26].type).toEqual('DEDENT');
+    expect(tokens[30].type).toEqual('DEDENT');
   });
 
   it('catches incorrect indentation errors', () => {
@@ -106,7 +112,7 @@ describe('tokenizer', () => {
     const secondLastToken = tokens[tokens.length - 2];
 
     expect(secondLastToken.type).toEqual('IDENTIFIER');
-    expect(secondLastToken.line).toEqual(9);
+    expect(secondLastToken.line).toEqual(11);
     expect(secondLastToken.col).toEqual(3);
 
     const uvwToken = tokens.find(token => token.text === 'uvw');
@@ -115,20 +121,30 @@ describe('tokenizer', () => {
     expect(uvwToken.line).toEqual(7);
     expect(uvwToken.col).toEqual(5);
   });
+
+  it('should have dedent after nestedstate2', () => {
+    const tokens = tokenize(inputStr);
+
+    const nestedstate2TokenIndex = tokens.findIndex(
+      t => t.type === 'IDENTIFIER' && t.text === 'nestedstate2',
+    );
+
+    expect(tokens[nestedstate2TokenIndex + 2].type).toEqual('DEDENT');
+  });
 });
 
 describe('parser', () => {
   it('should generate xstate representation of the input string', () => {
     const ast = parse(inputStr);
 
-    console.log(JSON.stringify(ast, null, 2));
+    // console.log(JSON.stringify(ast, null, 2));
     expect(ast).toEqual(expectedXstateJSON);
   });
 
   it('should generate xstate representation for the fetch statechart', () => {
     const ast = parse(fetchInputStr);
 
-    console.log(JSON.stringify(ast, null, 2));
+    // console.log(JSON.stringify(ast, null, 2));
     expect(ast).toEqual(expectedXstateJSONFetch);
   });
 });

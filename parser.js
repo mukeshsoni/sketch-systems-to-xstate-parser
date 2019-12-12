@@ -203,6 +203,7 @@ export function parse(inputStr) {
       return oneOrMore(newline());
     });
     zeroOrMore(newline);
+    zeroOrMore(dedent);
 
     const transitions = transitionsAndStates.filter(
       ts => ts.type === 'transition',
@@ -211,6 +212,7 @@ export function parse(inputStr) {
       ts => ts.type !== 'transition',
     );
 
+    console.log(transitionsAndStates, transitions, nestedStates);
     return {
       [stateName]: {
         type:
@@ -232,7 +234,7 @@ export function parse(inputStr) {
   function stateParser() {
     try {
       const stateInfo = oneOrAnother(stateWithMoreDetails, stateWithNameOnly);
-      zeroOrMore(dedent);
+      // console.log(JSON.stringify(stateInfo, null, 2));
       // const stateInfo = stateWithMoreDetails();
       return stateInfo;
     } catch (e) {
