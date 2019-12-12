@@ -6,7 +6,7 @@ const inputStr = `abc
   def -> lmn
   pasta -> noodles #more comment
   ast&*
-    opq -> rst
+    opq -> rst; ifyes
     uvw -> xyz
     nestedstate1
     nestedstate2*
@@ -27,7 +27,7 @@ const expectedXstateJSON = {
       initial: 'nestedstate2',
       isInitial: true,
       on: {
-        opq: 'rst',
+        opq: { target: 'rst', cond: 'ifyes' },
         uvw: 'xyz',
       },
       states: {
@@ -83,7 +83,7 @@ describe('tokenizer', () => {
   it('should give the correct number of tokens', () => {
     const tokens = tokenize(inputStr);
 
-    expect(tokens).toHaveLength(39);
+    expect(tokens).toHaveLength(40);
   });
 
   it('gives correct indent and dedent tokens', () => {
@@ -92,7 +92,7 @@ describe('tokenizer', () => {
     expect(tokens[2].type).toEqual('COMMENT');
     expect(tokens[4].type).toEqual('INDENT');
     expect(tokens[18].type).toEqual('INDENT');
-    expect(tokens[32].type).toEqual('DEDENT');
+    expect(tokens[33].type).toEqual('DEDENT');
   });
 
   it('catches incorrect indentation errors', () => {

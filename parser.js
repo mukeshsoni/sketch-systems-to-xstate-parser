@@ -140,6 +140,17 @@ export function parse(inputStr) {
     throw new Error('Could not find IDENTIFIER. Instead found', tokens[index]);
   }
 
+  function condition() {
+    if (tokens[index].type === 'CONDITION') {
+      return consume().text;
+    }
+
+    throw new Error(
+      'Could not find CONDITION identifier. Instead found',
+      tokens[index],
+    );
+  }
+
   function parallelState() {
     if (consume().type === 'PARALLEL_STATE') {
       return true;
@@ -202,10 +213,14 @@ export function parse(inputStr) {
     arrow();
     zeroOrMore(whitespace);
     const stateName = identifier();
+    const conditionName = zeroOrOne(condition);
 
     return {
       type: 'transition',
-      [eventName]: stateName,
+      [eventName]:
+        conditionName.length > 0
+          ? { target: stateName, cond: conditionName[0] }
+          : stateName,
     };
   }
 

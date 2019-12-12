@@ -12,12 +12,13 @@ export function tokenize(str) {
   let indentStack = [0];
   let currentLine = 1;
   let currentCol = 1;
+  const identifierRegex = /[a-zA-Z0-9_]/;
 
   function identifierToken() {
     let char = next();
     let idStr = '';
 
-    while (char !== undefined && /[a-zA-Z0-9_]/.test(char)) {
+    while (char !== undefined && identifierRegex.test(char)) {
       idStr += char;
       index += 1;
       char = next();
@@ -37,6 +38,17 @@ export function tokenize(str) {
     }
 
     return comment;
+  }
+
+  function conditionToken() {
+    let char = next();
+
+    while (!identifierRegex.test(char)) {
+      index += 1;
+      char = next();
+    }
+
+    return identifierToken();
   }
 
   // this is the main function
@@ -167,6 +179,10 @@ export function tokenize(str) {
     } else if (char === '*') {
       addToken('INITIAL_STATE');
       index += 1;
+    } else if (char === ';') {
+      // we expect a condition after the semicolon
+      const conditionName = conditionToken();
+      addToken('CONDITION', conditionName);
     } else if (/[a-zA-Z0-9_]/.test(char)) {
       const id = identifierToken();
       addToken('IDENTIFIER', id);
