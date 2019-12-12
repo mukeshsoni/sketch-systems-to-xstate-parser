@@ -4,7 +4,7 @@ import { parse } from './parser';
 const inputStr = `abc
 # some comment
   def -> lmn
-  pasta -> noodles
+  pasta -> noodles #more comment
   ast&
     opq -> rst
     uvw -> xyz
@@ -75,7 +75,7 @@ describe('tokenizer', () => {
   it('should give the correct number of tokens', () => {
     const tokens = tokenize(inputStr);
 
-    expect(tokens).toHaveLength(32);
+    expect(tokens).toHaveLength(33);
   });
 
   it('gives correct indent and dedent tokens', () => {
@@ -83,8 +83,8 @@ describe('tokenizer', () => {
 
     expect(tokens[2].type).toEqual('COMMENT');
     expect(tokens[4].type).toEqual('INDENT');
-    expect(tokens[16].type).toEqual('INDENT');
-    expect(tokens[25].type).toEqual('DEDENT');
+    expect(tokens[17].type).toEqual('INDENT');
+    expect(tokens[26].type).toEqual('DEDENT');
   });
 
   it('catches incorrect indentation errors', () => {
