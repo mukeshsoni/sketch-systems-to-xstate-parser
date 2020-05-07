@@ -4,7 +4,7 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "build": "rollup --config",
+    "build": "tsc",
     "test": "jest"
   },
   "repository": {
