@@ -50,7 +50,7 @@ export function parse(inputStr) {
   // the tokenizing phase because the INDENT and DEDENT tokens have be to be
   // preceded by a NEWLINE. In the final grammar, newlines only complicate things
   const tokens = tokenize(inputStr).filter(
-    t => t.type !== 'COMMENT' && t.type !== 'NEWLINE',
+    (t) => t.type !== 'COMMENT' && t.type !== 'NEWLINE',
   );
   let index = 0;
 
@@ -76,7 +76,7 @@ export function parse(inputStr) {
     // if none of the parsers worked
     throw new Error(
       `oneOrAnother parser: matched none of the rules: ${args
-        .map(fn => fn.name)
+        .map((fn) => fn.name)
         .join(' | ')}`,
     );
   }
@@ -110,26 +110,6 @@ export function parse(inputStr) {
         return parserResults;
       }
     }
-  }
-
-  // for cases like A -> B+
-  // where B can appear one or more times
-  function oneOrMore(fn) {
-    try {
-      const parserResult = fn();
-
-      return [parserResult].concat(zeroOrMore(fn));
-    } catch (e) {
-      return e;
-    }
-  }
-
-  function newline() {
-    if (consume().type === 'NEWLINE') {
-      return true;
-    }
-
-    throw new Error('Expected a NEWLINE');
   }
 
   function identifier() {
@@ -191,27 +171,17 @@ export function parse(inputStr) {
     throw new Error('Expected dedent');
   }
 
-  function whitespace() {
-    if (consume().type === 'WS') {
-      return true;
-    }
-
-    throw new Error('expected whitespace');
-  }
-
   function arrow() {
     if (consume().type === 'TRANSITION_ARROW') {
       return true;
     }
 
-    throw new Error('expected whitespace');
+    throw new Error('expected transition arrow');
   }
 
   function transition() {
     const eventName = identifier();
-    zeroOrMore(whitespace);
     arrow();
-    zeroOrMore(whitespace);
     const stateName = identifier();
     const conditionName = zeroOrOne(condition);
 
@@ -259,10 +229,10 @@ export function parse(inputStr) {
     zeroOrMore(dedent);
 
     const transitions = transitionsAndStates.filter(
-      ts => ts.type === 'transition',
+      (ts) => ts.type === 'transition',
     );
     const nestedStates = transitionsAndStates.filter(
-      ts => ts.type !== 'transition',
+      (ts) => ts.type !== 'transition',
     );
 
     return {
@@ -313,4 +283,3 @@ export function parse(inputStr) {
 
   return stateMachine();
 }
-

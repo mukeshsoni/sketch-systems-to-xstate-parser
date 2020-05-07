@@ -1,5 +1,5 @@
-import { tokenize } from './tokenizer';
-import { parse } from './parser';
+import { tokenize } from '../tokenizer';
+import { parse } from '../parser';
 
 const inputStr = `abc
 # some comment
@@ -117,7 +117,7 @@ describe('tokenizer', () => {
     expect(secondLastToken.line).toEqual(11);
     expect(secondLastToken.col).toEqual(3);
 
-    const uvwToken = tokens.find(token => token.text === 'uvw');
+    const uvwToken = tokens.find((token) => token.text === 'uvw');
 
     expect(uvwToken.type).toEqual('IDENTIFIER');
     expect(uvwToken.line).toEqual(7);
@@ -128,7 +128,7 @@ describe('tokenizer', () => {
     const tokens = tokenize(inputStr);
 
     const nestedstate2TokenIndex = tokens.findIndex(
-      t => t.type === 'IDENTIFIER' && t.text === 'nestedstate2',
+      (t) => t.type === 'IDENTIFIER' && t.text === 'nestedstate2',
     );
 
     expect(tokens[nestedstate2TokenIndex + 3].type).toEqual('DEDENT');
