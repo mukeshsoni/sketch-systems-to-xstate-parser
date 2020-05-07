@@ -1,18 +1,40 @@
 import { tokenize } from './tokenizer';
+import omit from './omit';
+import arrayOfObjToObj from './array_of_obj_to_obj';
 
-// omit certain properties from an Object
-// the keys arguments contains array of strings which are
-// the array of property names to be omitted
-function omit(keys, obj) {
-  return Object.entries(obj)
-    .filter(([k, _]) => !keys.includes(k))
-    .reduce((acc, [k, v]) => ({ ...acc, [k]: v }), {});
-}
-
-// merges array of objects into a single object
-function arrayOfObjToObj(arr) {
-  return arr.reduce((acc, item) => ({ ...acc, ...item }), {});
-}
+/**
+ * TODO: Let's try writing type for the AST
+ * AST stands for tree. What does a tree have? Nodes and each node has children.
+ * So we define the type of a NODE and we are good.
+ * interface ParseNode {
+ *   entry: NodeItem;
+ *   children: Array<ParseNode>;
+ * }
+ *
+ * Now we need to define the NodeItem type. It's definitely an enum or union
+ * type. We need to figure out the various node item types.
+ * P. S. - If we go with above structure for ParseNode, we will have to change
+ * our current one.
+ *
+ * type StateType = 'parallel' | 'initial' | 'final';
+ * interface State {
+ *   type: StateType;
+ *   initial?: string;
+ *   isInitial?: boolean;
+ *   states?: {
+ *     [stateName: string]: State;
+ *   };
+ *   on: {
+ *     [transitionName: string]: Transition;
+ *   }
+ * }
+ *
+ * interface Transition {
+ *   target: 'string';
+ *   cond?: string;
+ *   action?: string;
+ * }
+ */
 
 function withInitialState(stateInfo) {
   const stateName = Object.keys(stateInfo)[0];
