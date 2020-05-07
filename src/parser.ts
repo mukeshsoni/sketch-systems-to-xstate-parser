@@ -2,63 +2,48 @@ import { tokenize } from './tokenizer';
 import omit from './omit';
 import arrayOfObjToObj from './array_of_obj_to_obj';
 
-/**
- * TODO: Let's try writing type for the AST
- * AST stands for tree. What does a tree have? Nodes and each node has children.
- * So we define the type of a NODE and we are good.
- * interface ParseNode {
- *   entry: NodeItem;
- *   children: Array<ParseNode>;
- * }
- *
- * Now we need to define the NodeItem type. It's definitely an enum or union
- * type. We need to figure out the various node item types.
- * P. S. - If we go with above structure for ParseNode, we will have to change
- * our current one.
- *
- * type StateType = 'parallel' | 'initial' | 'final';
- * interface State {
- *   type: StateType;
- *   initial?: string;
- *   isInitial?: boolean;
- *   states?: {
- *     [stateName: string]: State;
- *   };
- *   on: {
- *     [transitionName: string]: Transition;
- *   }
- * }
- *
- * interface Transition {
- *   target: 'string';
- *   cond?: string;
- *   action?: string;
- * }
- */
+type StateType = 'normal' | 'parallel' | 'initial' | 'final';
 
-function withInitialState(stateInfo) {
-  const stateName = Object.keys(stateInfo)[0];
-  const nestedStates = stateInfo[stateName].states;
+// The StateNode is our whole parse tree or AST. Everything else flows from there
+interface StateNode {
+  id?: string;
+  name: string;
+  type: StateType;
+  initial?: string;
+  isInitial?: boolean;
+  states?: {
+    [stateName: string]: StateNode;
+  };
+  on: {
+    [transitionName: string]: TransitionNode;
+  };
+}
+
+interface TransitionNode {
+  type: 'transition';
+  target: 'string';
+  cond?: string;
+  action?: string;
+}
+
+function withInitialState(stateInfo: StateNode) {
+  const nestedStates = stateInfo.states;
   const nestedStateNames = Object.keys(nestedStates || {});
 
   if (nestedStateNames && nestedStateNames.length > 0) {
-    const initialStateName = Object.entries(nestedStates).reduce(
-      (acc, [k, v]) => {
-        if (v.isInitial) {
-          return k;
-        } else {
-          return acc;
-        }
-      },
-      nestedStateNames[0],
-    );
+    const initialStateName = Object.entries(
+      nestedStates as { [stateName: string]: StateNode },
+    ).reduce((acc: string, [k, v]: [string, StateNode]) => {
+      if (v.isInitial) {
+        return k;
+      } else {
+        return acc;
+      }
+    }, nestedStateNames[0]);
 
     return {
       ...stateInfo,
-      [stateName]: {
-        ...stateInfo[stateName],
-        initial: initialStateName,
-      },
+      initial: initialStateName,
     };
   } else {
     return stateInfo;
@@ -66,7 +51,7 @@ function withInitialState(stateInfo) {
 }
 
 // the main function. Just call this with the tokens
-export function parse(inputStr) {
+export function parse(inputStr: string) {
   // 1. filter the comment tokens. Not useful for the parsing
   // 2. We can also treat newlines as useless. They were only useful during
   // the tokenizing phase because the INDENT and DEDENT tokens have be to be
@@ -81,7 +66,7 @@ export function parse(inputStr) {
   // implements grammar rule with possibilities
   // using backtracking
   // e.g. operator -> '+' | '-' | '*' | '/'
-  function oneOrAnother(...args) {
+  function oneOrAnother(...args: any) {
     const savedIndex = index;
 
     for (let i = 0; i < args.length; i++) {
@@ -98,12 +83,12 @@ export function parse(inputStr) {
     // if none of the parsers worked
     throw new Error(
       `oneOrAnother parser: matched none of the rules: ${args
-        .map((fn) => fn.name)
+        .map((fn: any) => fn.name)
         .join(' | ')}`,
     );
   }
 
-  function zeroOrOne(fn) {
+  function zeroOrOne(fn: any) {
     const savedIndex = index;
 
     try {
@@ -117,7 +102,7 @@ export function parse(inputStr) {
   }
 
   // to implement things like statements = transitions * states*
-  function zeroOrMore(fn) {
+  function zeroOrMore(fn: any) {
     const parserResults = [];
 
     while (true) {
@@ -134,12 +119,16 @@ export function parse(inputStr) {
     }
   }
 
-  function identifier() {
+  function identifier(): string {
     if (tokens[index].type === 'IDENTIFIER') {
-      return consume().text;
+      return consume().text || 'id';
     }
 
-    throw new Error('Could not find IDENTIFIER. Instead found', tokens[index]);
+    throw new Error(
+      `Could not find IDENTIFIER. Instead found ${JSON.stringify(
+        tokens[index],
+      )}`,
+    );
   }
 
   function condition() {
@@ -148,8 +137,9 @@ export function parse(inputStr) {
     }
 
     throw new Error(
-      'Could not find CONDITION identifier. Instead found',
-      tokens[index],
+      `Could not find CONDITION identifier. Instead found ${JSON.stringify(
+        tokens[index],
+      )}`,
     );
   }
 
@@ -223,15 +213,14 @@ export function parse(inputStr) {
     const isInitial = zeroOrOne(initialState);
 
     return {
-      [stateName]: {
-        type:
-          parallel.length > 0
-            ? 'parallel'
-            : isFinal.length > 0
-            ? 'final'
-            : undefined,
-        isInitial: isInitial.length > 0 ? true : undefined,
-      },
+      name: stateName,
+      type:
+        parallel.length > 0
+          ? 'parallel'
+          : isFinal.length > 0
+          ? 'final'
+          : 'normal',
+      isInitial: isInitial.length > 0 ? true : undefined,
     };
   }
   // like transitions, nested states etc.
@@ -248,6 +237,7 @@ export function parse(inputStr) {
     const transitionsAndStates = zeroOrMore(() => {
       return oneOrAnother(transition, stateParser);
     });
+
     zeroOrMore(dedent);
 
     const transitions = transitionsAndStates.filter(
@@ -258,21 +248,29 @@ export function parse(inputStr) {
     );
 
     return {
-      [stateName]: {
-        type:
-          parallel.length > 0
-            ? 'parallel'
-            : isFinal.length > 0
-            ? 'final'
-            : undefined,
-        isInitial: isInitial.length > 0 ? true : undefined,
-        on:
-          transitions.length > 0
-            ? omit(['type'], arrayOfObjToObj(transitions))
-            : undefined,
-        states:
-          nestedStates.length > 0 ? arrayOfObjToObj(nestedStates) : undefined,
-      },
+      name: stateName,
+      type:
+        parallel.length > 0
+          ? 'parallel'
+          : isFinal.length > 0
+          ? 'final'
+          : 'normal',
+      isInitial: isInitial.length > 0 ? true : undefined,
+      on:
+        transitions.length > 0
+          ? omit(['type'], arrayOfObjToObj(transitions))
+          : undefined,
+      states:
+        // TODO: Why is `states` an object and not an Array<StateNode>?
+        nestedStates.length > 0
+          ? nestedStates.reduce(
+              (acc, nestedState) => ({
+                ...acc,
+                [nestedState.name]: nestedState,
+              }),
+              {},
+            )
+          : undefined,
     };
   }
 
@@ -290,13 +288,17 @@ export function parse(inputStr) {
     try {
       const parserOutput = stateParser();
 
-      const id = Object.keys(parserOutput)[0];
-      const initial = Object.keys(parserOutput[id].states)[0];
+      const id = parserOutput.name;
+      let initial: string | undefined;
+
+      if (parserOutput.states) {
+        initial = Object.keys(parserOutput.states)[0];
+      }
 
       return {
         id,
         initial,
-        ...parserOutput[id],
+        ...parserOutput,
       };
     } catch (e) {
       return { error: e };

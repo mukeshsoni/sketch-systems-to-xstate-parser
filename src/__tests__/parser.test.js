@@ -15,7 +15,9 @@ const inputStr = `abc
 
 const expectedXstateJSON = {
   id: 'abc',
+  name: 'abc',
   initial: 'ast',
+  type: 'normal',
   on: {
     def: 'lmn',
     pasta: 'noodles',
@@ -23,6 +25,7 @@ const expectedXstateJSON = {
   },
   states: {
     ast: {
+      name: 'ast',
       type: 'parallel',
       initial: 'nestedstate2',
       isInitial: true,
@@ -31,11 +34,11 @@ const expectedXstateJSON = {
         uvw: 'ast.opq',
       },
       states: {
-        nestedstate1: {},
-        nestedstate2: { isInitial: true },
+        nestedstate1: { name: 'nestedstate1', type: 'normal' },
+        nestedstate2: { name: 'nestedstate2', isInitial: true, type: 'normal' },
       },
     },
-    lastState: {},
+    lastState: { name: 'lastState', type: 'normal' },
   },
 };
 
@@ -56,29 +59,39 @@ const fetchInputStr = `fetch
 
 const expectedXstateJSONFetch = {
   id: 'fetch',
+  name: 'fetch',
+  type: 'normal',
   initial: 'idle',
   states: {
     idle: {
+      name: 'idle',
+      type: 'normal',
       on: {
         FETCH: 'loading',
       },
     },
     loading: {
+      name: 'loading',
+      type: 'normal',
       on: {
         RESOLVE: 'success',
         REJECT: 'failure',
       },
     },
     success: {
+      name: 'success',
       type: 'final',
     },
     failure: {
+      name: 'failure',
+      type: 'normal',
       on: {
         RETRY: 'loading',
       },
     },
   },
 };
+
 describe('tokenizer', () => {
   it('should give the correct number of tokens', () => {
     const tokens = tokenize(inputStr);
