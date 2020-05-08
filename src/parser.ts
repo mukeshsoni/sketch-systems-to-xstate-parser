@@ -1,8 +1,17 @@
-import { tokenize } from './tokenizer';
+import { tokenize, Token } from './tokenizer';
 import omit from './omit';
 import arrayOfObjToObj from './array_of_obj_to_obj';
 
 type StateType = 'atomic' | 'compound' | 'parallel' | 'final';
+
+// Tip: When trying to produce output which confirms to some standard, it's
+// always better to produce the most verbose version of a particular thing. E.g.
+// For transitions in xstate have can be represented by
+// { [transition] :stateName}, but also with a more verbose version where instead
+// of just specifying the stateName, we give an object. Writing the verbose
+// version makes it easier to add other variations and also doesn't make us add
+// if/else conditions for specific cases. Also makes consuming it simpler since
+// now the consuming parser only have to worry about one format.
 
 // The StateNode is our whole parse tree or AST. Everything else flows from there
 interface StateNode {
@@ -26,7 +35,7 @@ interface TransitionNode {
   action?: string;
 }
 
-function withInitialState(stateInfo: StateNode) {
+function withInitialState(stateInfo: StateNode): StateNode {
   const nestedStates = stateInfo.states;
   const nestedStateNames = Object.keys(nestedStates || {});
 
@@ -56,7 +65,7 @@ export function parse(inputStr: string) {
   // 2. We can also treat newlines as useless. They were only useful during
   // the tokenizing phase because the INDENT and DEDENT tokens have be to be
   // preceded by a NEWLINE. In the final grammar, newlines only complicate things
-  const tokens = tokenize(inputStr).filter(
+  const tokens: Array<Token> = tokenize(inputStr).filter(
     (t) => t.type !== 'COMMENT' && t.type !== 'NEWLINE',
   );
   let index = 0;
