@@ -17,7 +17,7 @@ const expectedXstateJSON = {
   id: 'abc',
   name: 'abc',
   initial: 'ast',
-  type: 'normal',
+  type: 'compound',
   on: {
     def: 'lmn',
     pasta: 'noodles',
@@ -34,11 +34,11 @@ const expectedXstateJSON = {
         uvw: 'ast.opq',
       },
       states: {
-        nestedstate1: { name: 'nestedstate1', type: 'normal' },
-        nestedstate2: { name: 'nestedstate2', isInitial: true, type: 'normal' },
+        nestedstate1: { name: 'nestedstate1', type: 'atomic' },
+        nestedstate2: { name: 'nestedstate2', isInitial: true, type: 'atomic' },
       },
     },
-    lastState: { name: 'lastState', type: 'normal' },
+    lastState: { name: 'lastState', type: 'atomic' },
   },
 };
 
@@ -60,19 +60,19 @@ const fetchInputStr = `fetch
 const expectedXstateJSONFetch = {
   id: 'fetch',
   name: 'fetch',
-  type: 'normal',
+  type: 'compound',
   initial: 'idle',
   states: {
     idle: {
       name: 'idle',
-      type: 'normal',
+      type: 'atomic',
       on: {
         FETCH: 'loading',
       },
     },
     loading: {
       name: 'loading',
-      type: 'normal',
+      type: 'atomic',
       on: {
         RESOLVE: 'success',
         REJECT: 'failure',
@@ -84,7 +84,7 @@ const expectedXstateJSONFetch = {
     },
     failure: {
       name: 'failure',
-      type: 'normal',
+      type: 'atomic',
       on: {
         RETRY: 'loading',
       },

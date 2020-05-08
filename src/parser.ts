@@ -2,7 +2,7 @@ import { tokenize } from './tokenizer';
 import omit from './omit';
 import arrayOfObjToObj from './array_of_obj_to_obj';
 
-type StateType = 'normal' | 'parallel' | 'initial' | 'final';
+type StateType = 'atomic' | 'compound' | 'parallel' | 'initial' | 'final';
 
 // The StateNode is our whole parse tree or AST. Everything else flows from there
 interface StateNode {
@@ -219,7 +219,7 @@ export function parse(inputStr: string) {
           ? 'parallel'
           : isFinal.length > 0
           ? 'final'
-          : 'normal',
+          : 'atomic',
       isInitial: isInitial.length > 0 ? true : undefined,
     };
   }
@@ -254,7 +254,9 @@ export function parse(inputStr: string) {
           ? 'parallel'
           : isFinal.length > 0
           ? 'final'
-          : 'normal',
+          : nestedStates.length > 0
+          ? 'compound'
+          : 'atomic',
       isInitial: isInitial.length > 0 ? true : undefined,
       on:
         transitions.length > 0
