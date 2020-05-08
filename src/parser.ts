@@ -2,7 +2,7 @@ import { tokenize } from './tokenizer';
 import omit from './omit';
 import arrayOfObjToObj from './array_of_obj_to_obj';
 
-type StateType = 'atomic' | 'compound' | 'parallel' | 'initial' | 'final';
+type StateType = 'atomic' | 'compound' | 'parallel' | 'final';
 
 // The StateNode is our whole parse tree or AST. Everything else flows from there
 interface StateNode {
