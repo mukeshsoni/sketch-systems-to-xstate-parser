@@ -16,7 +16,6 @@ type StateType = 'atomic' | 'compound' | 'parallel' | 'final';
 // The StateNode is our whole parse tree or AST. Everything else flows from there
 interface StateNode {
   id?: string;
-  name: string;
   type: StateType;
   initial?: string;
   isInitial?: boolean;
@@ -222,7 +221,7 @@ export function parse(inputStr: string) {
     const isInitial = zeroOrOne(initialState);
 
     return {
-      name: stateName,
+      id: stateName,
       type:
         parallel.length > 0
           ? 'parallel'
@@ -257,7 +256,7 @@ export function parse(inputStr: string) {
     );
 
     return {
-      name: stateName,
+      id: stateName,
       type:
         parallel.length > 0
           ? 'parallel'
@@ -277,7 +276,7 @@ export function parse(inputStr: string) {
           ? nestedStates.reduce(
               (acc, nestedState) => ({
                 ...acc,
-                [nestedState.name]: nestedState,
+                [nestedState.id]: nestedState,
               }),
               {},
             )
@@ -299,7 +298,7 @@ export function parse(inputStr: string) {
     try {
       const parserOutput = stateParser();
 
-      const id = parserOutput.name;
+      const id = parserOutput.id;
       let initial: string | undefined;
 
       if (parserOutput.states) {

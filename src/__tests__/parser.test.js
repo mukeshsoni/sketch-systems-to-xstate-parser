@@ -15,7 +15,6 @@ const inputStr = `abc
 
 const expectedXstateJSON = {
   id: 'abc',
-  name: 'abc',
   initial: 'ast',
   type: 'compound',
   on: {
@@ -25,7 +24,7 @@ const expectedXstateJSON = {
   },
   states: {
     ast: {
-      name: 'ast',
+      id: 'ast',
       type: 'parallel',
       initial: 'nestedstate2',
       isInitial: true,
@@ -34,11 +33,11 @@ const expectedXstateJSON = {
         uvw: 'ast.opq',
       },
       states: {
-        nestedstate1: { name: 'nestedstate1', type: 'atomic' },
-        nestedstate2: { name: 'nestedstate2', isInitial: true, type: 'atomic' },
+        nestedstate1: { id: 'nestedstate1', type: 'atomic' },
+        nestedstate2: { id: 'nestedstate2', isInitial: true, type: 'atomic' },
       },
     },
-    lastState: { name: 'lastState', type: 'atomic' },
+    lastState: { id: 'lastState', type: 'atomic' },
   },
 };
 
@@ -59,19 +58,18 @@ const fetchInputStr = `fetch
 
 const expectedXstateJSONFetch = {
   id: 'fetch',
-  name: 'fetch',
   type: 'compound',
   initial: 'idle',
   states: {
     idle: {
-      name: 'idle',
+      id: 'idle',
       type: 'atomic',
       on: {
         FETCH: 'loading',
       },
     },
     loading: {
-      name: 'loading',
+      id: 'loading',
       type: 'atomic',
       on: {
         RESOLVE: 'success',
@@ -79,11 +77,11 @@ const expectedXstateJSONFetch = {
       },
     },
     success: {
-      name: 'success',
+      id: 'success',
       type: 'final',
     },
     failure: {
-      name: 'failure',
+      id: 'failure',
       type: 'atomic',
       on: {
         RETRY: 'loading',
