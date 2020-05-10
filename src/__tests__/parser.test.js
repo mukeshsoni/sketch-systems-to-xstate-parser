@@ -2,25 +2,31 @@ import { tokenize } from '../tokenizer';
 import { parse } from '../parser';
 
 const inputStr = `abc
-# some comment
+% some comment
   def -> lmn
-  pasta -> noodles #more comment
+  pasta -> noodles %more comment
   ast&*
     opq -> rst; ifyes
-    uvw -> ast.opq
+    uvw -> #abc.lastState
     nestedstate1
     nestedstate2*
-  tried -> that
-  lastState`;
+  tried -> that > andDoThis
+  lastState
+    % trying out transient state
+    -> ast; ifyes
+    -> lastState; ifno`;
 
 const expectedXstateJSON = {
   id: 'abc',
   initial: 'ast',
   type: 'compound',
   on: {
-    def: 'lmn',
-    pasta: 'noodles',
-    tried: 'that',
+    def: { target: 'lmn' },
+    pasta: { target: 'noodles' },
+    tried: {
+      target: 'that',
+      actions: ['andDoThis'],
+    },
   },
   states: {
     ast: {
@@ -30,14 +36,29 @@ const expectedXstateJSON = {
       isInitial: true,
       on: {
         opq: { target: 'rst', cond: 'ifyes' },
-        uvw: 'ast.opq',
+        uvw: { target: '#abc.lastState' },
       },
       states: {
         nestedstate1: { id: 'nestedstate1', type: 'atomic' },
         nestedstate2: { id: 'nestedstate2', isInitial: true, type: 'atomic' },
       },
     },
-    lastState: { id: 'lastState', type: 'atomic' },
+    lastState: {
+      id: 'lastState',
+      type: 'atomic',
+      on: {
+        '': [
+          {
+            target: 'ast',
+            cond: 'ifyes',
+          },
+          {
+            target: 'lastState',
+            cond: 'ifno',
+          },
+        ],
+      },
+    },
   },
 };
 
@@ -65,15 +86,15 @@ const expectedXstateJSONFetch = {
       id: 'idle',
       type: 'atomic',
       on: {
-        FETCH: 'loading',
+        FETCH: { target: 'loading' },
       },
     },
     loading: {
       id: 'loading',
       type: 'atomic',
       on: {
-        RESOLVE: 'success',
-        REJECT: 'failure',
+        RESOLVE: { target: 'success' },
+        REJECT: { target: 'failure' },
       },
     },
     success: {
@@ -84,7 +105,7 @@ const expectedXstateJSONFetch = {
       id: 'failure',
       type: 'atomic',
       on: {
-        RETRY: 'loading',
+        RETRY: { target: 'loading' },
       },
     },
   },
@@ -94,7 +115,8 @@ describe('tokenizer', () => {
   it('should give the correct number of tokens', () => {
     const tokens = tokenize(inputStr);
 
-    expect(tokens).toHaveLength(40);
+    expect(tokens).toHaveLength(53);
+    expect(tokens).toMatchSnapshot();
   });
 
   it('gives correct indent and dedent tokens', () => {
@@ -122,11 +144,11 @@ describe('tokenizer', () => {
     const lastToken = tokens[tokens.length - 1];
     expect(lastToken.type).toEqual('DEDENT');
 
-    const secondLastToken = tokens[tokens.length - 2];
+    const thirdLastToken = tokens[tokens.length - 4];
 
-    expect(secondLastToken.type).toEqual('IDENTIFIER');
-    expect(secondLastToken.line).toEqual(11);
-    expect(secondLastToken.col).toEqual(3);
+    expect(thirdLastToken.type).toEqual('IDENTIFIER');
+    expect(thirdLastToken.line).toEqual(14);
+    expect(thirdLastToken.col).toEqual(6);
 
     const uvwToken = tokens.find((token) => token.text === 'uvw');
 
@@ -150,6 +172,7 @@ describe('parser', () => {
   it('should generate xstate representation of the input string', () => {
     const ast = parse(inputStr);
 
+    console.log(ast);
     // console.log(JSON.stringify(ast, null, 2));
     expect(ast).toEqual(expectedXstateJSON);
   });

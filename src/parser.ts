@@ -15,7 +15,7 @@ type StateType = 'atomic' | 'compound' | 'parallel' | 'final';
 
 // The StateNode is our whole parse tree or AST. Everything else flows from there
 interface StateNode {
-  id?: string;
+  id: string;
   type: StateType;
   initial?: string;
   isInitial?: boolean;
@@ -55,6 +55,19 @@ function withInitialState(stateInfo: StateNode): StateNode {
     };
   } else {
     return stateInfo;
+  }
+}
+
+class ParserError extends Error {
+  token: Token;
+  constructor(token: Token, ...params: any) {
+    super(...params);
+
+    if (Error.captureStackTrace) {
+      Error.captureStackTrace(this, ParserError);
+    }
+
+    this.token = token;
   }
 }
 
@@ -126,6 +139,18 @@ export function parse(inputStr: string) {
       }
     }
   }
+
+  // for cases like A -> B+
+  // where B can appear one or more times
+  // function oneOrMore(fn: any) {
+  // try {
+  // const parserResult = fn();
+
+  // return [parserResult].concat(zeroOrMore(fn));
+  // } catch (e) {
+  // return e;
+  // }
+  // }
 
   function identifier(): string {
     if (tokens[index].type === 'IDENTIFIER') {
@@ -199,18 +224,53 @@ export function parse(inputStr: string) {
     throw new Error('expected transition arrow');
   }
 
+  function actions() {
+    if (tokens[index].type === 'ACTION') {
+      return consume().text;
+    }
+
+    throw new ParserError(
+      tokens[index],
+      `Could not find ACTIONS identifier. Instead found ${tokens[index]}`,
+    );
+  }
+
   function transition() {
-    const eventName = identifier();
+    const eventNames = zeroOrOne(identifier);
+    let eventName: string = '';
+
+    if (eventNames.length > 0) {
+      eventName = eventNames[0];
+    }
     arrow();
     const stateName = identifier();
-    const conditionName = zeroOrOne(condition);
+    let conditionName = [];
+    let actionNames;
+
+    if (eventName) {
+      conditionName = zeroOrOne(condition);
+      actionNames = zeroOrMore(actions);
+    } else {
+      // if the first event name was absent, the condition is mandatory
+      conditionName = [condition()];
+      actionNames = zeroOrMore(actions);
+    }
 
     return {
       type: 'transition',
+      // TODO: What if we used the more verbose definition of each transition
+      // from the parser. { x: { target: 'y', cond: 'abc' }}. If we want to do
+      // any optimizations, like convert transitions without any conditions to
+      // shorter form, like { x: 'y' }, it can be done later on in one fell
+      // swoop
       [eventName]:
-        conditionName.length > 0
-          ? { target: stateName, cond: conditionName[0] }
-          : stateName,
+        conditionName.length > 0 || actionNames.length > 0
+          ? {
+              target: stateName,
+              cond: conditionName.length > 0 ? conditionName[0] : undefined,
+              actions: actionNames.length > 0 ? actionNames : undefined,
+            }
+          : { target: stateName },
     };
   }
 
@@ -241,18 +301,30 @@ export function parse(inputStr: string) {
     const parallel = zeroOrOne(parallelState);
     const isFinal = zeroOrOne(finalState);
     const isInitial = zeroOrOne(initialState);
-    indent();
-    const transitionsAndStates = zeroOrMore(() => {
-      return oneOrAnother(transition, stateParser);
-    });
+    const isIndentThere = zeroOrOne(indent);
+    let transitionsAndStates = [];
 
-    zeroOrMore(dedent);
+    // if there is an indent after state name, it has to be state with
+    // extra info
+    if (isIndentThere.length > 0) {
+      // transitionsAndStates = oneOrMore(() => {
+      // return oneOrAnother(transition, stateParser);
+      // });
+      transitionsAndStates = zeroOrMore(() => {
+        return oneOrAnother(transition, stateParser);
+      });
+
+      // any rule which has an indent should be always accompanied by a closing
+      // dedent. The indent and dedent have to match up, just like parentheses
+      // in other languages.
+      zeroOrMore(dedent);
+    }
 
     const transitions = transitionsAndStates.filter(
-      (ts) => ts.type === 'transition',
+      (ts: any) => ts.type === 'transition',
     );
     const nestedStates = transitionsAndStates.filter(
-      (ts) => ts.type !== 'transition',
+      (ts: any) => ts.type !== 'transition',
     );
 
     return {
@@ -274,7 +346,7 @@ export function parse(inputStr: string) {
         // TODO: Why is `states` an object and not an Array<StateNode>?
         nestedStates.length > 0
           ? nestedStates.reduce(
-              (acc, nestedState) => ({
+              (acc: { [key: string]: StateNode }, nestedState: StateNode) => ({
                 ...acc,
                 [nestedState.id]: nestedState,
               }),
